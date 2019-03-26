@@ -1,19 +1,27 @@
 require("dotenv").config();
 
-const fs = require("fs");
-const path = require("path");
-const Koa = require("koa");
-const Router = require("koa-router");
-const https = require("https");
-const cors = require("@koa/cors");
-const bodyParser = require("koa-bodyparser");
-const { default: enforceHttps } = require("koa-sslify");
-const { rootHandler } = require("./routes/root");
+import fs from "fs";
+import path from "path";
+import Koa from "koa";
+import Knex from "knex";
+import knexConfig from "./knexfile";
+import { Model } from "objection";
+import Router from "koa-router";
+import https from "https";
+import cors from "@koa/cors";
+import bodyParser from "koa-bodyparser";
+import enforceHttps from "koa-sslify";
+import rootHandler from "./routes/root";
+import todosRootHandler from "./routes/todos";
 
 const app = new Koa();
+const knex = Knex(knexConfig[process.env.NODE_ENV]);
 const router = new Router();
 
+Model.knex(knex);
+
 router.post("/", rootHandler);
+router.post("/todos", todosRootHandler);
 
 const PORT = 9898;
 
@@ -25,19 +33,21 @@ app
   .use(router.allowedMethods());
 
 // SSL options
-const HTTPS_CERT_PATH = (process.env.NODE_ENV = "localhost"
-  ? path.resolve(__dirname, process.env.LOCAL_CERT_PATH)
-  : process.env.REMOTE_CERT_PATH);
-const HTTPS_KEY_PATH = (process.env.NODE_ENV = "localhost"
-  ? path.resolve(__dirname, process.env.LOCAL_CERT_KEY_PATH)
-  : process.env.REMOTE_CERT_KEY_PATH);
+const HTTPS_CERT_PATH =
+  process.env.NODE_ENV === "production"
+    ? process.env.REMOTE_CERT_PATH
+    : path.resolve(__dirname, process.env.LOCAL_CERT_PATH);
+const HTTPS_KEY_PATH =
+  process.env.NODE_ENV === "production"
+    ? process.env.REMOTE_CERT_KEY_PATH
+    : path.resolve(__dirname, process.env.LOCAL_CERT_KEY_PATH);
 
 const options = {
   key: fs.readFileSync(HTTPS_KEY_PATH, "utf8"),
   cert: fs.readFileSync(HTTPS_CERT_PATH, "utf8")
 };
 
-const server = https.createServer(options, app.callback());
+export const server = https.createServer(options, app.callback());
 
 // // start the server
 if (!module.parent) {
@@ -47,7 +57,3 @@ if (!module.parent) {
     console.log(`HTTPS Server Listening on port: https://localhost:${PORT}`);
   }
 }
-
-module.exports = {
-  server
-};
