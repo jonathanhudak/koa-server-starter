@@ -11,17 +11,15 @@ import https from "https";
 import cors from "@koa/cors";
 import bodyParser from "koa-bodyparser";
 import enforceHttps from "koa-sslify";
-import rootHandler from "./routes/root";
-import todosRootHandler from "./routes/todos";
+import createApi from "./routes";
 
 const app = new Koa();
-const knex = Knex(knexConfig[process.env.NODE_ENV]);
+export const knex = Knex(knexConfig[process.env.NODE_ENV]);
 const router = new Router();
 
 Model.knex(knex);
 
-router.post("/", rootHandler);
-router.post("/todos", todosRootHandler);
+createApi(router);
 
 const PORT = 9898;
 

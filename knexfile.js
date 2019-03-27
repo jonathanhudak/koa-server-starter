@@ -6,7 +6,7 @@ module.exports = {
     },
     pool: {
       min: 2,
-      max: 10
+      max: 30
     }
   },
   test: {
@@ -16,7 +16,7 @@ module.exports = {
     },
     pool: {
       min: 2,
-      max: 10
+      max: 30
     }
   }
 };
